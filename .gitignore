@@ -1,0 +1,5 @@
+debug
+debug.*
+build/
+vendor/
+*.swp

@@ -194,11 +194,12 @@
 
 [[projects]]
   branch = "release-1.9"
-  digest = "1:9f5ca43806c06c4dd3c300bfbde99676f575012cabe67722ac30e474d8c07d81"
+  digest = "1:757294b3ffff083bf99edc1dac8231a8a370a695aef3d2e74493aae6eb052604"
   name = "k8s.io/api"
   packages = [
     "admission/v1beta1",
     "authentication/v1",
+    "core/v1",
   ]
   pruneopts = "UT"
   revision = "9273ee02527c608cecc74969b3e489f5dba686da"
@@ -254,6 +255,7 @@
   input-imports = [
     "github.com/golang/glog",
     "k8s.io/api/admission/v1beta1",
+    "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/serializer",
