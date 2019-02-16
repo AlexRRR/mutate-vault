@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/golang/glog"
@@ -37,14 +38,21 @@ type WebhookServer struct {
 	server *http.Server
 }
 
-func mutationRequired(ignoredList []string, metadata *metav1.ObjectMeta) bool {
+// checks if inject_secret label is defined in pod
+func mutationRequired(metadata *metav1.ObjectMeta) bool {
+	if val, ok := metadata.Labels["inject_secret"]; ok {
+		if val == "true" {
+			return true
+		}
+	}
 	return false
 }
 
 func (ws *WebhookServer) mutate(ar *v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
 	req := ar.Request
 	var pod corev1.Pod
-	if err := json.Unmarshal(req.Object.Raw, &pod); err != nil {
+	deserializer := codecs.UniversalDeserializer()
+	if _, _, err := deserializer.Decode(req.Object.Raw, nil, &pod); err != nil {
 		glog.Errorf("Could not unmarshall raw object: %v", err)
 		return &v1beta1.AdmissionResponse{
 			Result: &metav1.Status{
@@ -56,12 +64,18 @@ func (ws *WebhookServer) mutate(ar *v1beta1.AdmissionReview) *v1beta1.AdmissionR
 	glog.Infof("AdmissionReview for Kind=%v, Namespace=%v Name=%v (%v) UID=%v patchOperation=%v UserInfo=%v",
 		req.Kind, req.Namespace, req.Name, pod.Name, req.UID, req.Operation, req.UserInfo)
 
-	//if !mutationRequired(ignoredNamespaces, &pod.ObjectMeta) {
-	glog.Infof("Skipping mutation for %s/%s due to policy check", pod.Namespace, pod.Name)
-	return &v1beta1.AdmissionResponse{
-		Allowed: true,
+	if !mutationRequired(&pod.ObjectMeta) {
+		log.Print("hello")
+		glog.Infof("Skipping mutation for %s/%s due to policy check", pod.Namespace, pod.Name)
+		return &v1beta1.AdmissionResponse{
+			Allowed: true,
+		}
 	}
-	//}
+
+	return &v1beta1.AdmissionResponse{
+		Allowed: false,
+	}
+
 }
 
 func (ws *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
